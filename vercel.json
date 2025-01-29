@@ -11,5 +11,8 @@
       "src": "/(.*)",
       "dest": "index.js"
     }
-  ]
+  ],
+  "env": {
+    "MONGODB_DRIVER_VERSION": "4.1"
+  }
 }

@@ -13,9 +13,40 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Connect to MongoDB
 mongoose
-    .connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-    .then(() => console.log('Connected to MongoDB'))
-    .catch((err) => console.error('Could not connect to MongoDB', err));
+    .connect(process.env.MONGO_URI, { 
+        useNewUrlParser: true, 
+        useUnifiedTopology: true,
+        serverSelectionTimeoutMS: 10000,
+        socketTimeoutMS: 45000,
+        connectTimeoutMS: 10000,
+        retryWrites: true,
+        w: 'majority',
+        maxPoolSize: 10,
+        keepAlive: true,
+        keepAliveInitialDelay: 300000
+    })
+    .then(() => {
+        console.log('✅ Connected to MongoDB Atlas');
+        console.log('📊 Database:', mongoose.connection.name);
+        console.log('🔌 Connection State:', mongoose.connection.readyState);
+    })
+    .catch((err) => {
+        console.error('❌ MongoDB Connection Error:', err);
+        process.exit(1); // Exit if unable to connect to database
+    });
+
+// Add MongoDB connection error handlers
+mongoose.connection.on('error', (err) => {
+    console.error('MongoDB Runtime Error:', err);
+});
+
+mongoose.connection.on('disconnected', () => {
+    console.log('Lost MongoDB connection');
+});
+
+mongoose.connection.on('reconnected', () => {
+    console.log('Reconnected to MongoDB');
+});
 
 // Update the root route to serve index.html
 app.get('/', (req, res) => {
