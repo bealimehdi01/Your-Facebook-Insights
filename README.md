@@ -1,7 +1,15 @@
-<<<<<<< HEAD
-# Mojo Web Project
+# Your Facebook Insights
 
 A Facebook Page Insights viewer built with the MERN stack.
+
+## Features
+- Facebook Login OAuth
+- Page Insights Display with Data Source Indication
+- Date Range Selection
+- Automatic Fallback to Basic Stats
+
+## Live Demo
+[Visit the live application](https://your-facebook-insights.vercel.app)
 
 ## Setup Instructions
 
@@ -36,17 +44,8 @@ npm run dev
 npm start
 ```
 
-## Features
-- Facebook Login OAuth
-- Page Insights Display
-- Date Range Selection
-- Automatic Fallback to Basic Stats
-
 ## Deployment
 The app is ready to deploy on Vercel/Netlify.
 
 ## Testing Access
 Developer username "MetaAPIExpert" has been added for testing purposes.
-=======
-# Your-Facebook-Insights
->>>>>>> dc7f131c6b45ef88e63c70eecbdfa749af884bbe
