@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mojo Web Project</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f5f7fa;
+            color: #1a1a1a;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background: #ffffff;
+            padding: 1rem 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+            text-align: center; /* Center align the header */
+        }
+        .card {
+            background: #ffffff;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+        }
+        .login-btn {
+            display: inline-block;
+            background: #1877f2;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        .login-btn:hover {
+            background: #166fe5;
+        }
+        select, input, button {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+        button {
+            background: #1877f2;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        button:hover {
+            background: #166fe5;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .metric-card {
+            background: #ffffff;
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #e1e4e8;
+        }
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #1877f2;
+            margin: 0.5rem 0;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 1rem;
+        }
+        .error {
+            background: #ffebee;
+            border-color: #f44336;
+            color: #d32f2f;
+        }
+        /* Add new styles for profile layout */
+        .profile-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem;
+        }
+        .profile-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .profile-picture img {
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+        }
+        @media (max-width: 768px) {
+            .container { padding: 10px; }
+            .grid { grid-template-columns: 1fr; }
+        }
+    </style>
+    <script>
+        async function fetchProfile(accessToken) {
+            try {
+                const response = await fetch(`/profile?access_token=${accessToken}`);
+                const profile = await response.json();
+                document.getElementById('profile').innerHTML = `
+                    <div class="card profile-card">
+                        <div class="profile-info">
+                            <h2>Welcome, ${profile.name}</h2>
+                            <div class="profile-picture">
+                                <img src="${profile.picture.data.url}" alt="Profile Picture">
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('login-section').style.display = 'none';
+                document.getElementById('pages-section').style.display = 'block';
+                fetchPages(accessToken);
+            } catch (error) {
+                console.error('Error fetching profile:', error);
+            }
+        }
+
+        async function fetchPages(accessToken) {
+            try {
+                const response = await fetch(`/pages?access_token=${accessToken}`);
+                const pages = await response.json();
+                console.log('Pages data:', pages);
+                if (pages.data && pages.data.length > 0) {
+                    const pagesSelect = document.getElementById('pages');
+                    pagesSelect.innerHTML = pages.data.map(page => 
+                        `<option value="${page.id}" data-token="${page.access_token}">${page.name}</option>`
+                    ).join('');
+                } else {
+                    document.getElementById('pages-section').innerHTML += '<p>No pages found</p>';
+                }
+            } catch (error) {
+                console.error('Error fetching pages:', error);
+            }
+        }
+
+        async function fetchInsights() {
+            const pageSelect = document.getElementById('pages');
+            const pageId = pageSelect.value;
+            const selectedOption = pageSelect.options[pageSelect.selectedIndex];
+            const pageAccessToken = selectedOption.getAttribute('data-token');
+            const since = document.getElementById('since').value || '2024-01-01';
+            const until = document.getElementById('until').value || '2024-12-31';
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('insights').innerHTML = '';
+
+            try {
+                console.log('Fetching insights for page:', pageId);
+                const response = await fetch(`/page-insights?access_token=${pageAccessToken}&page_id=${pageId}&since=${since}&until=${until}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.message || 'Error fetching insights');
+                }
+
+                console.log('Received insights data:', data);
+
+                let insightsHtml = `
+                    <div class="card">
+                        <div style="margin-bottom: 1rem; color: #666; font-size: 0.9rem;">
+                            Data Source: ${data.source}
+                            ${data.note ? `<br>${data.note}` : ''}
+                        </div>
+                        <div class="grid">
+                `;
+
+                if (data.data && data.data.length > 0) {
+                    const findMetricValue = (metricName) => {
+                        const metric = data.data.find(m => m.name === metricName);
+                        if (!metric || !metric.values || metric.values.length === 0) return 'N/A';
+                        return metric.values.reduce((sum, value) => sum + (value.value || 0), 0);
+                    };
+
+                    const metrics = [
+                        { name: 'page_fans_total', label: 'Total Followers/Fans', icon: '👥' },
+                        { name: 'page_engaged_users', label: 'Total Engagement', icon: '💫' },
+                        { name: 'page_impressions_unique', label: 'Total Impressions', icon: '👁️' },
+                        { name: 'page_actions_post_reactions', label: 'Total Reactions', icon: '❤️' }
+                    ];
+
+                    metrics.forEach(metric => {
+                        insightsHtml += `
+                            <div class="metric-card">
+                                <div class="metric-icon">${metric.icon}</div>
+                                <div class="metric-value">${findMetricValue(metric.name)}</div>
+                                <div class="metric-label">${metric.label}</div>
+                            </div>
+                        `;
+                    });
+                }
+
+                insightsHtml += `</div></div>`;
+                document.getElementById('insights').innerHTML = insightsHtml;
+            } catch (error) {
+                console.error('Error fetching insights:', error);
+                document.getElementById('insights').innerHTML = `
+                    <div class="card error">
+                        <h3>Error</h3>
+                        <p>${error.message || 'Failed to fetch insights'}</p>
+                        <p>Common solutions:</p>
+                        <ul>
+                            <li>Make sure you are an admin of the page</li>
+                            <li>The page must have sufficient followers</li>
+                            <li>The page must be published and active</li>
+                        </ul>
+                    </div>
+                `;
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        window.onload = () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const accessToken = urlParams.get('access_token');
+            if (accessToken) {
+                fetchProfile(accessToken);
+            }
+        };
+    </script>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <h1>Mojo Web Project by Ali Sayyed</h1>
+        </div>
+    </div>
+    <div class="container">
+        <div id="login-section">
+            <div class="card">
+                <h2>Welcome to Page Insights</h2>
+                <p style="margin: 1rem 0;">This app helps you view insights for your Facebook pages. Here's how it works:</p>
+                <ol style="margin: 1rem 0 2rem 1.5rem;">
+                    <li>Connect with your Facebook account</li>
+                    <li>Select a page you manage from the dropdown</li>
+                    <li>Choose a date range</li>
+                    <li>View detailed page insights and analytics</li>
+                </ol>
+                <a href="/auth/facebook" class="login-btn">Login with Facebook</a>
+                <div style="margin-top: 1rem; font-size: 0.9rem; color: #666;">
+                    By continuing, you agree to our 
+                    <a href="/terms-of-service">Terms of Service</a> and 
+                    <a href="/privacy-policy">Privacy Policy</a>
+                </div>
+            </div>
+        </div>
+        <div id="profile"></div>
+        <div id="pages-section" style="display: none;">
+            <div class="card">
+                <h3>Select a Page</h3>
+                <select id="pages"></select>
+                <div class="grid" style="grid-template-columns: 1fr 1fr;">
+                    <div>
+                        <label for="since">Since</label>
+                        <input type="date" id="since" required>
+                    </div>
+                    <div>
+                        <label for="until">Until</label>
+                        <input type="date" id="until" required>
+                    </div>
+                </div>
+                <button onclick="fetchInsights()">Get Insights</button>
+            </div>
+        </div>
+        <div id="loading" class="loading">Loading insights...</div>
+        <div id="insights"></div>
+    </div>
+</body>
+</html>
+
