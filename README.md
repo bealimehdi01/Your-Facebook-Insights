@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Mojo Web Project
 
 A Facebook Page Insights viewer built with the MERN stack.
@@ -46,3 +47,6 @@ The app is ready to deploy on Vercel/Netlify.
 
 ## Testing Access
 Developer username "MetaAPIExpert" has been added for testing purposes.
+=======
+# Your-Facebook-Insights
+>>>>>>> dc7f131c6b45ef88e63c70eecbdfa749af884bbe
